@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title></title>
+</head>
+<body>
+
+<header class="site-header">
+</header>
+
+<main class="wrap">
+  <div class="title-block">
+    <h1></h1>
+    <p class="premise">このページのカードは hover されません。<b>あなたが hover されます。</b></p>
+  </div>
+
+  <!-- メンバーカードのグリッド(JSで生成) -->
+  <section class="grid" id="grid" aria-label="member cards"></section>
+
+  <p class="hint" id="hint">画面内でカーソルを動かすと、各カードからカーソルが出てきます</p>
+</main>
+
+<!-- 分身カーソル・あなたのカーソルを描く固定オーバーレイ(JSで中身生成) -->
+<div class="cursor-layer" id="cursorLayer" aria-hidden="true"></div>
+
+<!-- 集計バッジ -->
+<div class="hover-badge" id="hoverBadge">
+  あなたを hover 中: <b id="hoverNow">0</b> / <span id="hoverTotalWrap">通算 <b id="hoverTotal">0</b> 回</span>
+</div>
+
+<!-- 最初のガイドモーダル -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-card">
+    <h2 class="modal-title">ホバーすると思いましたか？<br><em>あなたはホバーされる側です。</em></h2>
+    <p class="modal-body">
+      各カードから出てくるカーソルが、あなたを追いかけて hover しにきます。<br>
+      あなたのカーソルは「ボタン」。逃げても、寄ってきます。
+    </p>
+    <button type="button" class="modal-start" id="modalStart">はじめる</button>
+  </div>
+</div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
