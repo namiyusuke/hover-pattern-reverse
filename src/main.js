@@ -44,8 +44,18 @@ cardData.forEach((data, i) => {
   const card = document.createElement('article');
   card.className = 'card';
   card.style.setProperty('--hue', data.hue);
+  // photo 付きなら写真 + 追従する瞳、無ければグラデーション
+  let thumbInner = '';
+  if (data.photo) {
+    const e = data.eyes;
+    thumbInner = `
+      <img class="photo" src="${data.photo}" alt="${data.name}" draggable="false">
+      <span class="eye" style="left:${e.lx}%; top:${e.y}%"><span class="pupil"></span></span>
+      <span class="eye" style="left:${e.rx}%; top:${e.y}%"><span class="pupil"></span></span>`;
+    card.classList.add('has-photo');
+  }
   card.innerHTML = `
-    <div class="thumb"><div class="port"></div><div class="bubble"></div></div>
+    <div class="thumb">${thumbInner}<div class="port"></div><div class="bubble"></div></div>
     <div class="meta">
       <div class="name">${data.name}</div>
       <div class="company">${data.company}</div>
@@ -73,6 +83,7 @@ cardData.forEach((data, i) => {
 
   agents.push({
     data, card, mini, leash,
+    eyes: [...card.querySelectorAll('.eye')],
     bubble: card.querySelector('.bubble'),
     nextBubbleAt: 0.6 + Math.random() * 3.5,  // 次に吹き出しを出す時刻
     bubbleShown: false,
@@ -198,6 +209,23 @@ function tick() {
       a.leash.style.opacity = a.deployed ? '0.55' : '0.3';
     } else {
       a.leash.style.opacity = '0';
+    }
+
+    // 写真の瞳をカーソルの方へ向ける(目が追う)
+    if (a.eyes.length) {
+      for (const eye of a.eyes) {
+        const r = eye.getBoundingClientRect();
+        if (!r.width) continue;
+        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        const dx = pointer.x - cx, dy = pointer.y - cy;
+        const d = Math.hypot(dx, dy) || 1;
+        // 黒目の可動半径(白目内に収める)。横長なので縦は控えめに
+        const maxX = r.width * 0.24, maxY = r.height * 0.28;
+        const s = Math.min(d / 120, 1);
+        const ox = (dx / d) * maxX * s, oy = (dy / d) * maxY * s;
+        eye.firstElementChild.style.transform =
+          `translate(calc(-50% + ${ox}px), calc(-50% + ${oy}px))`;
+      }
     }
 
     // 待機中(定位置)は「どこに隠れた?」等の吹き出しをランダムに出す

@@ -58,7 +58,44 @@ h1 { font-size: clamp(26px, 4vw, 38px); font-weight: 800; letter-spacing: 0.05em
   aspect-ratio: 4 / 3;
   position: relative;
   background: #e2e6e7;
+  overflow: hidden;
 }
+/* 写真カードは正方形にして、画像の目の位置とそのまま一致させる */
+.card.has-photo .thumb { aspect-ratio: 1 / 1; }
+.card .photo {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: 50% 50%;
+  user-select: none; -webkit-user-drag: none;
+}
+
+/* カーソルを追う目(白目 = 台座 / 黒目 = 動く)。横長のアーモンド型 */
+.card .eye {
+  position: absolute;
+  width: clamp(20px, 10%, 44px); height: clamp(12px, 6%, 27px);
+  transform: translate(-50%, -50%);
+  /* 白目 */
+  background: #fff;
+  border-radius: 50% / 50%;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.22), 0 1px 2px rgba(0,0,0,0.3);
+  z-index: 3; pointer-events: none; overflow: hidden;
+}
+/* 黒目(虹彩+瞳孔)。円形を保ったままカーソルを追って動く */
+.card .eye .pupil {
+  position: absolute; left: 50%; top: 50%;
+  height: 86%; aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 32%, #4b5560 0 22%, #12151a 60%);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  transition: transform 0.08s linear;
+}
+.card .eye .pupil::after {   /* ハイライト */
+  content: ""; position: absolute; left: 22%; top: 16%;
+  width: 30%; height: 30%; border-radius: 50%;
+  background: rgba(255,255,255,0.92);
+}
+
 /* カーソルの射出口(カードのどこから出るか) */
 
 .card.emitting .port { opacity: 0; transform: translateX(-50%) scale(0.4); }
