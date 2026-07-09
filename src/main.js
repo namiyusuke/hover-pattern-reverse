@@ -48,10 +48,22 @@ cardData.forEach((data, i) => {
   let thumbInner = '';
   if (data.photo) {
     const e = data.eyes;
+    // 左右それぞれの目の span を組み立てる。
+    // 共通指定(e.w/h/iris/round)＋ 片目だけの上書き(e.l / e.r)に対応。
+    const eyeSpan = (side) => {
+      const c = { x: side === 'l' ? e.lx : e.rx, y: e.y,
+                  w: e.w, h: e.h, iris: e.iris, round: e.round,
+                  ...(side === 'l' ? e.l : e.r) };
+      let st = `left:${c.x}%; top:${c.y}%;`;
+      if (c.w    != null) st += `--eye-w:${c.w}%;`;
+      if (c.h    != null) st += `--eye-h:${c.h}%;`;
+      if (c.iris != null) st += `--iris:${c.iris}%;`;
+      if (c.round)        st += `--eye-r:50%;`;   // 真円にする
+      return `<span class="eye" style="${st}"><span class="pupil"></span></span>`;
+    };
     thumbInner = `
       <img class="photo" src="${data.photo}" alt="${data.name}" draggable="false">
-      <span class="eye" style="left:${e.lx}%; top:${e.y}%"><span class="pupil"></span></span>
-      <span class="eye" style="left:${e.rx}%; top:${e.y}%"><span class="pupil"></span></span>`;
+      ${eyeSpan('l')}${eyeSpan('r')}`;
     card.classList.add('has-photo');
   }
   card.innerHTML = `
@@ -125,6 +137,12 @@ document.getElementById('modalStart').addEventListener('click', () => {
 // ── ポインタ状態 ─────────────────────────────────────────────────
 const pointer = { x: window.innerWidth / 2, y: window.innerHeight / 2, in: false, seen: false };
 
+// 「あなた」ボタンの実際の位置。ポインタに“遅れて”追従(ラグ)し、
+// 速く動かすと進行方向へ伸縮(スクワッシュ&ストレッチ)する。
+// カーソル・目・hover 判定はこの遅れた位置を基準にする。
+const you = { x: pointer.x, y: pointer.y, vx: 0, vy: 0 };
+const YOU_LAG = 0.18;   // 0=固まる 1=遅れ無し(直付け)
+
 window.addEventListener('pointermove', (e) => {
   pointer.x = e.clientX;
   pointer.y = e.clientY;
@@ -165,6 +183,12 @@ function tick() {
   let hoveringCount = 0;
   const active = started && pointer.in && pointer.seen;
 
+  // 「あなた」ボタンをポインタへラグ追従させ、速度を記録
+  const nx = you.x + (pointer.x - you.x) * YOU_LAG;
+  const ny = you.y + (pointer.y - you.y) * YOU_LAG;
+  you.vx = nx - you.x; you.vy = ny - you.y;
+  you.x = nx; you.y = ny;
+
   agents.forEach((a, i) => {
     // 出動判定(時間差で順に出てくる)
     if (active && !a.deployed && elapsed > a.delay) {
@@ -180,8 +204,8 @@ function tick() {
     // 目標位置: 出動中はあなたの周りの持ち場、非出動中はカード
     let tx, ty;
     if (a.deployed) {
-      tx = pointer.x + Math.cos(a.offAng + elapsed * 0.6) * a.offRad;
-      ty = pointer.y + Math.sin(a.offAng + elapsed * 0.6) * a.offRad;
+      tx = you.x + Math.cos(a.offAng + elapsed * 0.6) * a.offRad;
+      ty = you.y + Math.sin(a.offAng + elapsed * 0.6) * a.offRad;
     } else {
       tx = a.home.x; ty = a.home.y;
       // 巣に戻り切ったらオーバーレイ表示を消す
@@ -217,7 +241,7 @@ function tick() {
         const r = eye.getBoundingClientRect();
         if (!r.width) continue;
         const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-        const dx = pointer.x - cx, dy = pointer.y - cy;
+        const dx = you.x - cx, dy = you.y - cy;
         const d = Math.hypot(dx, dy) || 1;
         // 黒目の可動半径(白目内に収める)。横長なので縦は控えめに
         const maxX = r.width * 0.24, maxY = r.height * 0.28;
@@ -248,7 +272,7 @@ function tick() {
     }
 
     // hover 判定
-    const nowHovering = a.deployed && Math.hypot(a.x - pointer.x, a.y - pointer.y) < HOVER_DIST;
+    const nowHovering = a.deployed && Math.hypot(a.x - you.x, a.y - you.y) < HOVER_DIST;
     if (nowHovering) {
       hoveringCount++;
       a.mini.classList.add('hovering');
@@ -257,8 +281,16 @@ function tick() {
     }
   });
 
-  // あなたのカーソル(ボタン)描画。ポインタ中心にボタンを合わせる
-  userCursor.style.transform = `translate(${pointer.x}px, ${pointer.y}px)`;
+  // あなたのカーソル(ボタン)描画。遅れた位置 + 速く動くと進行方向へ伸縮
+  const speed = Math.hypot(you.vx, you.vy);
+  let t = `translate(${you.x}px, ${you.y}px)`;
+  if (speed > 0.5) {
+    const ang = Math.atan2(you.vy, you.vx) * 180 / Math.PI;
+    const sx = 1 + Math.min(speed / 40, 0.35);   // 進行方向に伸びる
+    const sy = 1 - Math.min(speed / 90, 0.15);   // 直交方向に縮む
+    t += ` rotate(${ang}deg) scale(${sx}, ${sy}) rotate(${-ang}deg)`;
+  }
+  userCursor.style.transform = t;
   userCursor.classList.toggle('hovered', hoveringCount > 0);
   userCursor.classList.toggle('pressed', hoveringCount >= 3);   // 大勢に囲まれると押し込まれる
 

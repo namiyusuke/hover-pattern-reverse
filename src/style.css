@@ -69,21 +69,24 @@ h1 { font-size: clamp(26px, 4vw, 38px); font-weight: 800; letter-spacing: 0.05em
   user-select: none; -webkit-user-drag: none;
 }
 
-/* カーソルを追う目(白目 = 台座 / 黒目 = 動く)。横長のアーモンド型 */
+/* カーソルを追う目(白目 = 台座 / 黒目 = 動く)。
+   サイズ・黒目・形は cards.js から CSS 変数で上書きできる:
+   --eye-w 白目の横幅 / --eye-h 白目の高さ / --iris 黒目の大きさ / --eye-r 白目の角丸(形) */
 .card .eye {
   position: absolute;
-  width: clamp(20px, 10%, 44px); height: clamp(12px, 6%, 27px);
+  width: var(--eye-w, clamp(20px, 10%, 44px));
+  height: var(--eye-h, clamp(12px, 6%, 27px));
   transform: translate(-50%, -50%);
   /* 白目 */
   background: #fff;
-  border-radius: 50% / 50%;
+  border-radius: var(--eye-r, 50% / 50%);
   box-shadow: inset 0 1px 3px rgba(0,0,0,0.22), 0 1px 2px rgba(0,0,0,0.3);
   z-index: 3; pointer-events: none; overflow: hidden;
 }
 /* 黒目(虹彩+瞳孔)。円形を保ったままカーソルを追って動く */
 .card .eye .pupil {
   position: absolute; left: 50%; top: 50%;
-  height: 86%; aspect-ratio: 1;
+  height: var(--iris, 86%); aspect-ratio: 1;
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background: radial-gradient(circle at 40% 32%, #4b5560 0 22%, #12151a 60%);
@@ -177,29 +180,30 @@ h1 { font-size: clamp(26px, 4vw, 38px); font-weight: 800; letter-spacing: 0.05em
   position: absolute; left: 0; top: 0;
   transform: translate(-50%, -50%);
   display: inline-flex; align-items: center; justify-content: center;
-  padding: 11px 22px; border-radius: 11px;
-  background: linear-gradient(#ffffff, #eef1f2); color: var(--ink);
+  width: 50px; height: 50px;
+  border-radius: 50%;
+  padding: 11px 22px;
+  background: #212121;
+  color: #fff;
   border: 1px solid #b9c2c4;
   border-bottom-color: #9aa5a8;
   /* 底面の影で「押せる立体ボタン」に見せる */
-  box-shadow: 0 4px 0 #c2cbcd, 0 6px 10px rgba(20,26,30,0.18);
   font-size: 13px; font-weight: 800; letter-spacing: 0.03em; white-space: nowrap;
-  text-shadow: 0 1px 0 #fff;
   transition: background 0.16s, border-color 0.16s, box-shadow 0.12s, transform 0.1s;
 }
 /* hover されると、誰が見ても「ボタンが hover された」見た目に(青く発光) */
-.user-cursor.hovered .btn {
+/* .user-cursor.hovered .btn {
   border-color: var(--blue);
   background: linear-gradient(#f4f9ff, #e3f0ff);
   box-shadow: 0 4px 0 #9ecbff, 0 8px 18px rgba(77,163,255,0.45), 0 0 0 3px rgba(77,163,255,0.2);
   text-shadow: none;
-}
+} */
 /* たくさんに hover されると押し込まれる(底面の影が縮んで沈む) */
-.user-cursor.pressed .btn {
+/* .user-cursor.pressed .btn {
   transform: translate(-50%, calc(-50% + 3px));
   background: linear-gradient(#e3f0ff, #d3e6ff);
   box-shadow: 0 1px 0 #9ecbff, 0 3px 8px rgba(77,163,255,0.4), 0 0 0 3px rgba(77,163,255,0.22);
-}
+} */
 
 /* あなたに付く hover ラベル */
 .you-tag {
