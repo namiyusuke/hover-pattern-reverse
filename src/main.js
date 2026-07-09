@@ -175,13 +175,25 @@ const pointer = { x: window.innerWidth / 2, y: window.innerHeight / 2, in: false
 const you = { x: pointer.x, y: pointer.y, vx: 0, vy: 0 };
 const YOU_LAG = 0.18;   // 0=固まる 1=遅れ無し(直付け)
 
-window.addEventListener('pointermove', (e) => {
+// タッチ端末か(指は不正確なので後で判定距離を甘くする)
+const isTouch = window.matchMedia('(pointer: coarse)').matches;
+
+// 指を置いた/動かした瞬間の共通処理。
+// 初回のタッチでは「あなた」ボタンを指の位置へワープさせ、中央から滑ってこないようにする。
+function trackPointer(e) {
   pointer.x = e.clientX;
   pointer.y = e.clientY;
   pointer.in = true;
-  if (!pointer.seen) { pointer.seen = true; hint.classList.add('hide'); }
+  if (!pointer.seen) {
+    pointer.seen = true;
+    hint.classList.add('hide');
+    you.x = pointer.x; you.y = pointer.y;   // 初回は指の位置に即スナップ
+  }
   userCursor.style.opacity = 1;
-});
+}
+window.addEventListener('pointermove', trackPointer);
+// スマホは指を「置いた瞬間」から追従させたい(pointerdownを待たず即反応)
+window.addEventListener('pointerdown', trackPointer);
 window.addEventListener('pointerleave', () => { pointer.in = false; userCursor.style.opacity = 0; });
 document.addEventListener('mouseleave', () => { pointer.in = false; userCursor.style.opacity = 0; });
 
@@ -200,7 +212,7 @@ window.addEventListener('scroll', updateHomes, { passive: true });
 updateHomes();
 
 // ── メインループ ─────────────────────────────────────────────────
-const HOVER_DIST = 34;   // これより近ければ「hover 中」
+const HOVER_DIST = isTouch ? 48 : 34;   // これより近ければ「hover 中」(指は不正確なので甘め)
 let prevT = performance.now() / 1000;
 let elapsed = 0;
 let hoverTotal = 0;

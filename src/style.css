@@ -12,7 +12,14 @@ body {
   color: var(--ink);
   font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
   min-height: 100vh;
+  min-height: 100dvh;         /* iOSのアドレスバー分のズレを防ぐ */
   cursor: none;               /* 本物のカーソルは隠し、自前で描く */
+  /* スマホの触り心地: タップの青いハイライト・長押しの選択/コールアウトを消す */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  overscroll-behavior-y: none; /* 端で引っぱった時の白ちらつき(バウンス)を抑える */
 }
 a { color: inherit; text-decoration: none; }
 
@@ -279,6 +286,7 @@ text-align: left;
   background: var(--ink); color: #fff; cursor: pointer;
   box-shadow: 0 6px 0 #0d1113, 0 10px 22px rgba(20,26,30,0.25);
   transition: transform 0.1s, box-shadow 0.1s;
+  touch-action: manipulation;  /* スマホの300msタップ遅延を無くす */
 }
 .modal-start:hover { transform: translateY(-1px); }
 .modal-start:active { transform: translateY(3px); box-shadow: 0 2px 0 #0d1113, 0 4px 10px rgba(20,26,30,0.25); }
@@ -337,4 +345,39 @@ text-align: left;
 }
 .modal-start-wrap:has(button) {
   text-align: center;
+}
+
+/* ── スマホ最適化 ── */
+@media (max-width: 600px) {
+  .wrap { padding: 30px 12px 132px; }        /* 下端のバッジ/隠れエリアに被らせない */
+  .title-block { margin-bottom: 24px; }
+  .premise { font-size: 13px; }
+
+  /* 1列で間延びさせず2列で密に */
+  .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .card .meta { padding: 10px 11px 12px; }
+  .card .name { font-size: 13.5px; }
+  .card .company { font-size: 11px; }
+  .card .role { font-size: 10px; padding: 2px 7px; }
+
+  .hint { margin-top: 24px; font-size: 12px; }
+
+  /* 集計バッジは下中央のまま小さく */
+  .hover-badge { bottom: 14px; font-size: 11.5px; padding: 8px 13px; }
+
+  /* 隠れエリアはバッジと重ならないよう上に逃がして小型化 */
+  .shelter {
+    right: 12px; bottom: 66px;
+    width: 148px; height: 92px;
+    border-radius: 12px;
+  }
+  .shelter-title { font-size: 12px; letter-spacing: 0.08em; }
+  .shelter-sub { font-size: 9.5px; }
+
+  .modal-card { padding: 30px 22px 26px; }
+}
+
+/* タッチ端末: 指は不正確なので hover 判定を少し甘めにするヒントを body に付与 */
+@media (pointer: coarse) {
+  body { --touch: 1; }
 }
