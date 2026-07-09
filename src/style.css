@@ -238,11 +238,42 @@ h1 { font-size: clamp(26px, 4vw, 38px); font-weight: 800; letter-spacing: 0.05em
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 .modal-eyebrow { font-size: 10.5px; letter-spacing: 0.3em; color: var(--sub); text-transform: uppercase; margin-bottom: 16px; }
-.modal-title { font-size: clamp(19px, 3.4vw, 24px); font-weight: 900; line-height: 1.5; letter-spacing: 0.02em; }
+.modal-title { font-size: clamp(19px, 3.4vw, 24px); font-weight: 900; line-height: 1.5; letter-spacing: 0.02em;
+text-align: left;
+}
 .modal-title em { font-style: normal; color: var(--blue); }
 .modal-body { margin-top: 16px; font-size: 13px; line-height: 1.85; color: var(--sub); }
-.modal-start {
+
+/* テキストを行ごとに、下からふわっと順番に出す。
+   opacity は付けず both の巻き戻しフィルで出現前を隠す */
+.modal-card .line { display: block; }
+.modal-card .line,
+.modal-start-wrap {
+  animation: revealUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  text-align: center;
+}
+
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(14px); filter: blur(5px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+}
+.modal-title .l1 { animation-delay: 0.1s; }
+.modal-title .l2 { animation-delay: 0.2s; }
+.modal-body .l3 { animation-delay: 0.3s; }
+.modal-body .l4 { animation-delay: 0.4s; }
+/* ボタン(ラッパー)は最後に出て、以降やさしく呼吸する。
+   実ボタンとは別要素なので、ホバー/クリックの手応えと競合しない */
+.modal-start-wrap {
+  display: block;
   margin-top: 26px;
+  animation: revealUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both,
+             modalBreathe 2.4s ease-in-out 1.7s infinite;
+}
+@keyframes modalBreathe {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+.modal-start {
   font: inherit; font-size: 15px; font-weight: 800; letter-spacing: 0.04em;
   padding: 13px 40px; border: none; border-radius: 12px;
   background: var(--ink); color: #fff; cursor: pointer;
@@ -266,7 +297,44 @@ h1 { font-size: clamp(26px, 4vw, 38px); font-weight: 800; letter-spacing: 0.05em
 }
 .hover-badge b { color: var(--blue); font-variant-numeric: tabular-nums; }
 
+/* ── 隠れエリア(退避所) ── */
+.shelter {
+  position: fixed;
+  right: 24px; bottom: 22px;
+  width: 240px; height: 150px;
+  z-index: 80;
+  display: grid; place-items: center;
+  border: 2px dashed #6b7478;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.04);
+  pointer-events: none;              /* あなたのボタンは自前描画なので判定は通す */
+  transition: border-color 0.25s, background 0.25s, box-shadow 0.25s, transform 0.25s;
+}
+.shelter-label { text-align: center; line-height: 1.5; }
+.shelter-title { display: block; font-size: 14px; font-weight: 900; letter-spacing: 0.14em; color: #cfd6d8; }
+.shelter-sub   { display: block; margin-top: 4px; font-size: 10.5px; letter-spacing: 0.06em; color: var(--sub); }
+.shelter-safe  { display: none; margin-top: 4px; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; color: var(--blue); }
+/* あなたが中に入っている間 */
+.shelter.safe {
+  border-color: var(--blue);
+  background: rgba(77,163,255,0.12);
+  box-shadow: 0 0 0 3px rgba(77,163,255,0.18), 0 12px 34px rgba(77,163,255,0.25);
+  transform: scale(1.02);
+}
+.shelter.safe .shelter-sub  { display: none; }
+.shelter.safe .shelter-safe { display: block; }
+.shelter.safe .shelter-title { color: #fff; }
+
+.modal-card .line, .modal-start-wrap{
+  text-align: left;
+}
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .card.recoil { animation: none; }
+  .modal-card .line, .modal-start-wrap {
+    animation: none;
+     text-align: left; }
+}
+.modal-start-wrap:has(button) {
+  text-align: center;
 }

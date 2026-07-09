@@ -14,6 +14,24 @@ import { cards as cardData } from './cards.js';
 const grid        = document.getElementById('grid');
 const layer       = document.getElementById('cursorLayer');
 const hint        = document.getElementById('hint');
+const shelter     = document.getElementById('shelter');   // hover されない隠れエリア(固定)
+
+// 点(x,y)が矩形 r の外側になるよう、pad ぶん外へ押し出す。
+// 中に入り込んでいたら一番近い辺の外側へ寄せる → カーソルが外周で足止めされる。
+function clampOutside(r, x, y, pad) {
+  if (x > r.left - pad && x < r.right + pad && y > r.top - pad && y < r.bottom + pad) {
+    const dl = x - (r.left  - pad);   // 左辺の外まで
+    const dr = (r.right + pad) - x;   // 右辺の外まで
+    const dt = y - (r.top   - pad);   // 上辺の外まで
+    const db = (r.bottom + pad) - y;  // 下辺の外まで
+    const m = Math.min(dl, dr, dt, db);
+    if      (m === dl) x = r.left  - pad;
+    else if (m === dr) x = r.right + pad;
+    else if (m === dt) y = r.top   - pad;
+    else               y = r.bottom + pad;
+  }
+  return { x, y };
+}
 
 // カードと分身カーソルを結ぶ「リード線」を描くSVGレイヤー(カーソルの後ろ)
 const leashSVG = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -34,6 +52,18 @@ const idleLines = [
   'どこに隠れた?', 'あれ、いない…', 'どこ行った?', 'かくれんぼ?',
   '出ておいで', 'まだ hover してない', 'カーソルどこ?', 'ここにいる?',
   '逃げないで〜', '見失った…', 'そろそろ hover させて',
+];
+
+// 隠れエリアに逃げ込まれ、外周で足止めされている時に出す悔しがりコメント。
+const blockedLines = [
+  'そこはずるい！', '出てきて〜', 'そこ入れない…', 'ずるいぞ',
+  'まだ hover してない', 'こっち来て', 'バリアかよ', '待ってるってば',
+];
+
+// あなたのカーソルを見つけて hover した(捕まえた)時に出すコメント。
+const foundLines = [
+  '見つけた！', 'みっけ！', 'いた！', '捕まえた', 'はい hover',
+  '見〜つけた', 'ここにいた！', '逃がさない',
 ];
 
 // ── カードとカーソルを生成 ────────────────────────────────────────
@@ -97,6 +127,8 @@ cardData.forEach((data, i) => {
     data, card, mini, leash,
     eyes: [...card.querySelectorAll('.eye')],
     bubble: card.querySelector('.bubble'),
+    blockedLine: blockedLines[i % blockedLines.length],  // 足止め時のセリフ(個体で固定)
+    foundLine:   foundLines[i % foundLines.length],      // 見つけた時のセリフ(個体で固定)
     nextBubbleAt: 0.6 + Math.random() * 3.5,  // 次に吹き出しを出す時刻
     bubbleShown: false,
     bubbleHideAt: 0,
@@ -189,6 +221,12 @@ function tick() {
   you.vx = nx - you.x; you.vy = ny - you.y;
   you.x = nx; you.y = ny;
 
+  // あなたが隠れエリアの中に居るか判定。中に居る間は hover されない。
+  const sr = shelter.getBoundingClientRect();
+  const youHidden = active &&
+    you.x > sr.left && you.x < sr.right && you.y > sr.top && you.y < sr.bottom;
+  shelter.classList.toggle('safe', youHidden);
+
   agents.forEach((a, i) => {
     // 出動判定(時間差で順に出てくる)
     if (active && !a.deployed && elapsed > a.delay) {
@@ -213,6 +251,12 @@ function tick() {
         a.mini.classList.remove('live');
         a.card.classList.remove('emitting');
       }
+    }
+
+    // あなたが隠れエリアに居る間は、カーソルはエリアの中へ入れず外周で足止め
+    if (youHidden && a.deployed) {
+      const c = clampOutside(sr, tx, ty, 16);
+      tx = c.x; ty = c.y;
     }
 
     // バネ積分
@@ -252,8 +296,29 @@ function tick() {
       }
     }
 
-    // 待機中(定位置)は「どこに隠れた?」等の吹き出しをランダムに出す
-    if (!a.deployed) {
+    // hover 判定(隠れエリアに居る間は成立させない)。あなたを見つけたか。
+    const nowHovering = !youHidden && a.deployed &&
+      Math.hypot(a.x - you.x, a.y - you.y) < HOVER_DIST;
+
+    // 吹き出し(カードから出る)。
+    // ・待機中(定位置): 「どこに隠れた?」等をランダムに
+    // ・隠れエリアに逃げ込まれ足止め中: 「そこはずるい!」等を出し続ける
+    // ・あなたを見つけて hover 中: 「見つけた!」等を出し続ける
+    if (youHidden && a.deployed) {
+      if (a.bubble.textContent !== a.blockedLine || !a.bubbleShown) {
+        a.bubble.textContent = a.blockedLine;
+        a.bubble.classList.add('show');
+        a.bubbleShown = true;
+        a.bubbleHideAt = Infinity;   // エリアに居る間は出しっぱなし
+      }
+    } else if (nowHovering) {
+      if (a.bubble.textContent !== a.foundLine || !a.bubbleShown) {
+        a.bubble.textContent = a.foundLine;
+        a.bubble.classList.add('show');
+        a.bubbleShown = true;
+        a.bubbleHideAt = Infinity;   // 見つけている間は出しっぱなし
+      }
+    } else if (!a.deployed) {
       if (!a.bubbleShown && elapsed >= a.nextBubbleAt) {
         a.bubble.textContent = idleLines[Math.floor(Math.random() * idleLines.length)];
         a.bubble.classList.add('show');
@@ -265,14 +330,12 @@ function tick() {
         a.nextBubbleAt = elapsed + 2.5 + Math.random() * 4.5;  // 次はしばらく後
       }
     } else if (a.bubbleShown) {
-      // 出動したら吹き出しは引っ込める
+      // 出動中(足止めでない)なら吹き出しは引っ込める
       a.bubble.classList.remove('show');
       a.bubbleShown = false;
       a.nextBubbleAt = elapsed + 0.5 + Math.random() * 3;
     }
 
-    // hover 判定
-    const nowHovering = a.deployed && Math.hypot(a.x - you.x, a.y - you.y) < HOVER_DIST;
     if (nowHovering) {
       hoveringCount++;
       a.mini.classList.add('hovering');

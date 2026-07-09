@@ -22,6 +22,15 @@
   <p class="hint" id="hint">画面内でカーソルを動かすと、各カードからカーソルが出てきます</p>
 </main>
 
+<!-- 隠れエリア(退避所): ここに入ると追跡カーソルに hover されない -->
+<div class="shelter" id="shelter" role="region" aria-label="hoverされない隠れエリア">
+  <span class="shelter-label">
+    <span class="shelter-title">隠れエリア</span>
+    <span class="shelter-sub">ここに入ると hover されない</span>
+    <span class="shelter-safe">SAFE — 隠れ中</span>
+  </span>
+</div>
+
 <!-- 分身カーソル・あなたのカーソルを描く固定オーバーレイ(JSで中身生成) -->
 <div class="cursor-layer" id="cursorLayer" aria-hidden="true"></div>
 
@@ -33,12 +42,15 @@
 <!-- 最初のガイドモーダル -->
 <div class="modal-overlay" id="modal">
   <div class="modal-card">
-    <h2 class="modal-title">ホバーすると思いましたか？<br><em>あなたはホバーされる側です。</em></h2>
+    <h2 class="modal-title">
+      <span class="line l1">ホバーすると思いましたか？</span>
+      <em class="line l2">あなたはホバーされる側です。</em>
+    </h2>
     <p class="modal-body">
-      各カードから出てくるカーソルが、あなたを追いかけて hover しにきます。<br>
-      あなたのカーソルは「ボタン」。逃げても、寄ってきます。
+      <span class="line l3">各カードから出てくるカーソルが、あなたを追いかけて hover しにきます。</span>
+      <span class="line l4">あなたのカーソルは「ボタン」。逃げても、寄ってきます。</span>
     </p>
-    <button type="button" class="modal-start" id="modalStart">はじめる</button>
+    <span class="modal-start-wrap"><button type="button" class="modal-start" id="modalStart">はじめる</button></span>
   </div>
 </div>
 
